@@ -31,7 +31,6 @@ data Expr =
           | Eqq Expr Expr
           deriving Eq
 
--- _v rd = Val rd
 _s xs = Set $ S.fromList xs
 
 
