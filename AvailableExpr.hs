@@ -4,25 +4,6 @@ import qualified Data.Set as S
 import Data.List
 import Debug.Trace
 
-data Label = Labl Int
-           | Undef
-           deriving (Ord, Eq)
-
-instance Show Label where
-         show (Labl i) = show i
-         show Undef = "?"
-
-l n = Labl n
-
-{-
-data RD = AEin Int
-        | AEout Int
-        deriving Eq
-
-instance Show RD where
-         show (AEin i) = "AEin(" ++ show i ++ ")"
-         show (AEout i) = "AEout(" ++ show i ++ ")"
--}
 data Expr = 
           AEin Int
           | AEout Int
@@ -72,15 +53,16 @@ instance Show Aexpr where
   show (Minus e1 e2) = show e1 ++ "-" ++ show e2
   show (Lit i) = show i 
   show (Var v) = show v
-
+  
 instance Num Aexpr where
   (*) = Mul
   (+) = Add
   (-) = Minus
 
 vars = ["x", "y", "a", "b"] -- "Var" set
-aExpr = [Add (Var "a") (Var "b"), Mul (Var "a") (Var "b"), Add (Var "a") (Lit 1)]
-labs = Undef : map l [1, 2, 3, 4, 5, 6] -- "Lab?"
+aExpr = [Add (Var "a") (Var "b"),
+         Mul (Var "a") (Var "b"),
+         Add (Var "a") (Lit 1)]
 
 a `inExpr` (Mul e1 e2)  = (a `inExpr` e1) || (a `inExpr` e2)
 a `inExpr` (Add e1 e2)  = (a `inExpr` e1) || (a `inExpr` e2)
@@ -89,9 +71,10 @@ a `inExpr` (Var x) | a == x  = True
                    | otherwise = False
 
 
-kill a =  _s [(v,e) | v <- vars,  e <-aExpr, a `inExpr` e] `U` _s [(a, e) | e <- aExpr]
+kill a =  _s [(v,e) | v <- vars,  e <- aExpr, a `inExpr` e] `U` _s [(a, e) | e <- aExpr]
 
 -- use _s to make a set from list of pairs
+
 eqs = [ AEin  1 .=. _s [] ,
         AEin  2 .=. AEout 1,
         AEin  3 .=. AEout 2 `Join` (AEout 5),
