@@ -1,7 +1,9 @@
+{-# LANGUAGE OverloadedStrings #-}
 module AvailableExpr where
 
 import qualified Data.Set as S
 import Data.List
+import Data.String
 import Debug.Trace
 
 data Expr = 
@@ -29,8 +31,9 @@ instance Show Expr where
 ppExpr :: [Expr] -> String
 ppExpr = intercalate "\n" . map show
 
-ppResult (rdins, rdouts) = "AEin: \n" ++ ppExpr rdins
-                           ++ "\n\nAEout: \n" ++ ppExpr rdouts ++ "\n"
+ppResult (ins, outs) = ppAsEqs AEin ins ++ "\n\n" ++ ppAsEqs AEout outs ++ "\n"
+                           where
+                             ppAsEqs ctor es = intercalate "\n" $ map (\(e,i) -> show (ctor i) ++ "=" ++ show e) $ zip es [1..]
 
 e1 .\ e2 = Diff e1 e2
 
@@ -45,6 +48,9 @@ data Aexpr = Mul Aexpr Aexpr
            | Lit Int
            | Var String
              deriving (Eq, Ord)
+
+instance IsString Aexpr where
+  fromString a = Var a
 
 instance Show Aexpr where
   show (Mul e1 e2) = show e1 ++ "*" ++ show e2
@@ -81,11 +87,11 @@ eqs = [ AEin  1 .=. _s [] ,
         AEin  4 .=. AEout 3,
         AEin  5 .=. AEout 4,
         
-        AEout 1 .=. AEin  1 .\ kill "x" `U` _s [("x", Var "a" + Var "b")],
-        AEout 2 .=. AEin  2 .\ kill "y" `U` _s [("y", Var "a" * Var "b")],
+        AEout 1 .=. AEin  1 .\ kill "x" `U` _s [("x", "a" + "b")],
+        AEout 2 .=. AEin  2 .\ kill "y" `U` _s [("y", "a" * "b")],
         AEout 3 .=. AEin  3,
         AEout 4 .=. AEin  4 .\ kill "a",
-        AEout 5 .=. AEin  5 .\ kill "x" `U` _s [("x", Var "a" + Var "b")]
+        AEout 5 .=. AEin  5 .\ kill "x" `U` _s [("x", "a" + "b")]
       ]
 
 -- TODO add ordering!!!

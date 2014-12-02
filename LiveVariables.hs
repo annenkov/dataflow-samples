@@ -29,8 +29,9 @@ instance Show Expr where
 ppExpr :: [Expr] -> String
 ppExpr = intercalate "\n" . map show
 
-ppResult (rdins, rdouts) = "LVin: \n" ++ ppExpr rdins
-                           ++ "\n\nLVout: \n" ++ ppExpr rdouts ++ "\n"
+ppResult (ins, outs) = ppAsEqs LVin ins  ++ "\n\n" ++  ppAsEqs LVout outs ++ "\n"
+                           where
+                             ppAsEqs ctor es = intercalate "\n" $ map (\(e,i) -> show (ctor i) ++ "=" ++ show e) $ zip es [1..]
 
 e1 .\ e2 = Diff e1 e2
 

@@ -13,15 +13,6 @@ instance Show Label where
 
 l n = Labl n
 
-{-
-data RD = RDin Int
-        | RDout Int
-        deriving Eq
-
-instance Show RD where
-         show (RDin i) = "RDin(" ++ show i ++ ")"
-         show (RDout i) = "RDout(" ++ show i ++ ")"
--}
 data Expr = 
           RDin Int
           | RDout Int
@@ -42,11 +33,12 @@ instance Show Expr where
   show (U e1 e2) = show e1 ++ " U " ++ show e2
   show (Eqq e1 e2) = show e1 ++ "=" ++ show e2
 
-ppExpr :: [Expr] -> String
-ppExpr = intercalate "\n" . map show
+ppExprs :: [Expr] -> String
+ppExprs = intercalate "\n" . map show
 
-ppResult (rdins, rdouts) = "RDin: \n" ++ ppExpr rdins
-                           ++ "\n\nDRout: \n" ++ ppExpr rdouts ++ "\n"
+ppResult (rdins, rdouts) = (ppAsEqs RDin rdins)  ++ "\n\n" ++ ppAsEqs RDout rdouts ++ "\n"
+                           where
+                             ppAsEqs ctor es = intercalate "\n" $ map (\(e,i) -> show (ctor i) ++ "=" ++ show e) $ zip es [1..]
 
 e1 .\ e2 = Diff e1 e2
 
@@ -55,7 +47,7 @@ infix 1 .=.
 i .=. s = Eqq i s
 
 vars = ["x", "y", "z"] -- "Var" set 
-labs = Undef : map l [1, 2, 3, 4, 5, 6] -- "Lab?"
+labs = Undef : map l [1, 2, 3, 4, 5, 6] -- "Lab?" set (Lab `U` {?})
 
 -- use _s to make a set from list of pairs
 eqs = [ RDin  1 .=. _s [(v, Undef) | v <- vars] ,
@@ -78,18 +70,18 @@ getDefs eqs = ([e1 | Eqq (RDin _) e1 <- eqs], [e2 | Eqq (RDout _) e2 <- eqs])
 
 --setRDin ds = 
 
-substRD v rd s@(Set _) = s
-substRD v rd (Diff e1 e2) = Diff (substRD v rd e1) (substRD v rd e2)
-substRD v rd (U e1 e2) = U (substRD v rd e1) (substRD v rd e2)
-substRD v rd old
+subst v rd s@(Set _) = s
+subst v rd (Diff e1 e2) = Diff (subst v rd e1) (subst v rd e2)
+subst v rd (U e1 e2) = U (subst v rd e1) (subst v rd e2)
+subst v rd old
               | old==rd = v
               | otherwise = old
 
 substAllins [] _ outs = outs
-substAllins (v:vs) i outs = substAllins vs (i+1) (map (substRD v (RDin i)) outs)
+substAllins (v:vs) i outs = substAllins vs (i+1) (map (subst v (RDin i)) outs)
 
 substAllouts [] _ ins = ins
-substAllouts (v:vs) i ins = substAllouts vs (i+1) (map (substRD v (RDout i)) ins)
+substAllouts (v:vs) i ins = substAllouts vs (i+1) (map (subst v (RDout i)) ins)
 
 eval (U s1 s2) = S.union (eval s1) (eval s2)
 eval (Diff s1 s2) = S.difference (eval s1) (eval s2)
